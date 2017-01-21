@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+<title>Simulation</title>
+<style>
+body {
+    background: black;
+    color: turquoise;
+    font-family: monospace;
+}
+
+#status, #simulation, #time, #output {
+    border: 1px solid turquoise;
+    padding: 10px;
+    margin: 5px;
+}
+
+#main {
+    height: 400px;
+    display: flex;
+}
+
+#simulation {
+    position: relative;
+}
+
+#simulation, #messages {
+    flex-grow: 1;
+}
+
+#messages {
+    max-width: 300px;
+}
+
+#player {
+    position: absolute;
+    width: 0;
+    height: 0;
+    top: 50%;
+    left: 50%;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    border-top: 60px solid yellow;
+    margin: -30px 0 0 -12px;
+    will-change: transform;
+    transform: rotate(0deg);
+}
+</style>
+</head>
+
+<body>
+<div id="wrap">
+    <div id="status">Status goes here</div>
+    <div id="main">
+        <div id="simulation">
+            <div id="player"></div>
+        </div>
+        <div id="messages">
+            <div id="time">0000</div>
+            <div id="output">Ready</div>
+        </div>
+    </div>
+    <button id="jump">Send jumpscare</button>
+</div>
+
+<script>
+    var player = document.getElementById('player');
+
+    var host = location.origin.replace(/^http/, 'ws');
+    var ws = new WebSocket(host);
+
+    function radToDeg (angle) {
+      return angle * (180 / Math.PI);
+    }
+
+    ws.onmessage = function (event) {
+        var payload = JSON.parse(event.data);
+
+        // Only let visor messages through
+        if(payload.sender !== 'VISOR') {
+            return;
+        }
+
+        // Rotate on-screen arror according to headset movement
+        if(payload.action === 'ROTATION') {
+            player.style.transform = 'rotate(' + radToDeg(-payload.value) + 'deg)';
+        }
+    };
+
+    var scareButton = document.getElementById('jump');
+    scareButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('SEND JUMPSCARE');
+        ws.send(JSON.stringify({
+            sender: 'SIMULATION',
+            action: 'SCARE'
+        }));
+    })
+</script>
+</body>
+</html>
